@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActionTypes, DialogueIntents, classifyIntent } from './action_space';
+import actionSpace from '@/modules/action_space';
 
 /**
  * 玩家行为输入面板
@@ -9,17 +9,34 @@ import { ActionTypes, DialogueIntents, classifyIntent } from './action_space';
  * @param {Function} props.onSubmit - 行为提交回调 (action) => void
  */
 export default function TRPGActionPanel({ characters = [], items = [], onSubmit }) {
-  const [actionType, setActionType] = useState(ActionTypes.DIALOGUE);
+  const [actionType, setActionType] = useState(actionSpace.ACTION_TYPES.DIALOGUE);
   const [content, setContent] = useState('');
   const [target, setTarget] = useState('');
-  const [intent, setIntent] = useState(DialogueIntents.STATEMENT);
+  const [intent, setIntent] = useState('statement');
   
   // 处理内容变化时自动检测意图
   const handleContentChange = (e) => {
     const text = e.target.value;
     setContent(text);
-    if (actionType === ActionTypes.DIALOGUE) {
-      setIntent(classifyIntent(text));
+    if (actionType === actionSpace.ACTION_TYPES.DIALOGUE) {
+      // 简单意图分类
+      const intentMap = {
+        '?': 'question',
+        '！': 'exclamation',
+        '!': 'exclamation',
+        '请': 'request',
+        '帮': 'request',
+        '谢谢': 'gratitude'
+      };
+      
+      let detectedIntent = 'statement';
+      Object.entries(intentMap).forEach(([key, value]) => {
+        if (text.includes(key)) {
+          detectedIntent = value;
+        }
+      });
+      
+      setIntent(detectedIntent);
     }
   };
 
@@ -30,13 +47,13 @@ export default function TRPGActionPanel({ characters = [], items = [], onSubmit 
     // 根据不同类型添加额外字段
     let action;
     switch (actionType) {
-      case ActionTypes.DIALOGUE:
+      case actionSpace.ACTION_TYPES.DIALOGUE:
         action = { ...baseAction, intent, intensity: 0.5 };
         break;
-      case ActionTypes.ACTION:
+      case actionSpace.ACTION_TYPES.ACTION:
         action = { ...baseAction, location: 'current' };
         break;
-      case ActionTypes.ITEM:
+      case actionSpace.ACTION_TYPES.ITEM:
         action = { ...baseAction, verb: 'use' };
         break;
       default:
@@ -48,7 +65,7 @@ export default function TRPGActionPanel({ characters = [], items = [], onSubmit 
   };
 
   // 可选项根据行为类型变化
-  const targetOptions = actionType === ActionTypes.ITEM ? items : characters;
+  const targetOptions = actionType === actionSpace.ACTION_TYPES.ITEM ? items : characters;
   
   return (
     <div className="p-4 bg-gray-100 rounded-lg shadow">
@@ -56,7 +73,7 @@ export default function TRPGActionPanel({ characters = [], items = [], onSubmit 
       
       {/* 行为类型选择 */}
       <div className="flex space-x-2 mb-3">
-        {Object.values(ActionTypes).map((type) => (
+        {Object.values(actionSpace.ACTION_TYPES).map((type) => (
           <button
             key={type}
             className={`px-3 py-1 rounded ${actionType === type 
@@ -64,8 +81,8 @@ export default function TRPGActionPanel({ characters = [], items = [], onSubmit 
               : 'bg-white border border-gray-300'}`}
             onClick={() => setActionType(type)}
           >
-            {type === ActionTypes.DIALOGUE ? '对话' : 
-             type === ActionTypes.ACTION ? '行动' : '物品'}
+            {type === actionSpace.ACTION_TYPES.DIALOGUE ? '对话' : 
+             type === actionSpace.ACTION_TYPES.ACTION ? '行动' : '物品'}
           </button>
         ))}
       </div>
@@ -73,9 +90,9 @@ export default function TRPGActionPanel({ characters = [], items = [], onSubmit 
       {/* 内容输入 */}
       <textarea
         className="w-full p-2 border border-gray-300 rounded mb-3"
-        placeholder={actionType === ActionTypes.DIALOGUE 
+        placeholder={actionType === actionSpace.ACTION_TYPES.DIALOGUE 
           ? '输入对话内容...' 
-          : actionType === ActionTypes.ACTION 
+          : actionType === actionSpace.ACTION_TYPES.ACTION 
             ? '描述你的行动...' 
             : '选择物品...'}
         value={content}
@@ -83,7 +100,7 @@ export default function TRPGActionPanel({ characters = [], items = [], onSubmit 
       />
       
       {/* 意图显示（仅对话） */}
-      {actionType === ActionTypes.DIALOGUE && (
+      {actionType === actionSpace.ACTION_TYPES.DIALOGUE && (
         <div className="mb-3">
           <span className="text-sm text-gray-600">检测意图: </span>
           <span className="font-medium">{intent}</span>

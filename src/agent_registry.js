@@ -141,6 +141,89 @@ export function createAgent(config) {
 class AgentRegistry {
   constructor() {
     this.agents = new Map();
+    this.hasPlayerCharacter = true; // 默认有玩家角色
+    
+    // 初始化默认角色
+    this.initDefaultCharacters();
+  }
+  
+  /**
+   * 初始化默认角色（玩家和GM）
+   */
+  initDefaultCharacters() {
+    // 创建默认的玩家角色
+    const playerCharacter = {
+      id: 'player_default',
+      name: '玩家角色',
+      type: 'player',
+      description: '由玩家控制的角色',
+      gender: '未设置',
+      age: 25,
+      role: '冒险者',
+      background: '请设置你的角色背景故事',
+      personality: {
+        openness: 70,
+        conscientiousness: 60,
+        extraversion: 65,
+        agreeableness: 75,
+        neuroticism: 40
+      },
+      skills: [
+        { name: '战斗', level: 5 },
+        { name: '交涉', level: 6 },
+        { name: '探索', level: 7 }
+      ],
+      relationships: [],
+      behaviorTags: ['brave', 'curious', 'resourceful'],
+      llmConfig: {
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKey: '',
+        temperature: 0.7,
+        maxTokens: 2000
+      }
+    };
+    
+    // 创建默认的GM角色
+    const gmCharacter = {
+      id: 'gm_default',
+      name: '游戏主持人',
+      type: 'gm',
+      description: '负责推进故事、描述场景和执行规则的角色',
+      gender: '未设置',
+      age: 0,
+      role: '游戏主持人',
+      background: '世界的创造者和故事的讲述者',
+      personality: {
+        openness: 90,
+        conscientiousness: 85,
+        extraversion: 70,
+        agreeableness: 80,
+        neuroticism: 30
+      },
+      skills: [
+        { name: '讲故事', level: 10 },
+        { name: '规则判定', level: 10 },
+        { name: '场景描述', level: 10 }
+      ],
+      relationships: [],
+      behaviorTags: ['fair', 'creative', 'descriptive'],
+      llmConfig: {
+        provider: 'openai',
+        model: 'gpt-4o',
+        apiKey: '',
+        temperature: 0.8,
+        maxTokens: 3000
+      }
+    };
+    
+    // 注册默认角色
+    try {
+      this.register(playerCharacter);
+      this.register(gmCharacter);
+    } catch (error) {
+      console.error('初始化默认角色失败:', error);
+    }
   }
 
   /**
@@ -175,6 +258,111 @@ class AgentRegistry {
    */
   getAll() {
     return Array.from(this.agents.values());
+  }
+  
+  /**
+   * 获取所有角色对象
+   * @returns {Object} 所有角色的对象映射
+   */
+  getAllAgents() {
+    const result = {};
+    this.agents.forEach((agent, id) => {
+      result[id] = agent;
+    });
+    return result;
+  }
+  
+  /**
+   * 切换有无玩家模式
+   * @param {boolean} hasPlayer - 是否有玩家角色
+   */
+  setPlayerMode(hasPlayer) {
+    this.hasPlayerCharacter = hasPlayer;
+    
+    // 如果切换到无玩家模式，确保有足够的NPC角色
+    if (!hasPlayer) {
+      const npcs = this.getAll().filter(agent => agent.type === 'npc');
+      if (npcs.length === 0) {
+        // 创建一个默认NPC
+        const defaultNPC = {
+          id: `npc_default_${Date.now()}`,
+          name: '默认NPC',
+          type: 'npc',
+          description: '自动生成的NPC角色',
+          gender: '未设置',
+          age: 30,
+          role: '居民',
+          background: '普通的居民',
+          personality: {
+            openness: 50,
+            conscientiousness: 50,
+            extraversion: 50,
+            agreeableness: 50,
+            neuroticism: 50
+          },
+          skills: [
+            { name: '日常生活', level: 5 }
+          ],
+          relationships: [],
+          behaviorTags: ['normal'],
+          llmConfig: {
+            provider: 'openai',
+            model: 'gpt-4o',
+            apiKey: '',
+            temperature: 0.7,
+            maxTokens: 2000
+          }
+        };
+        this.register(defaultNPC);
+      }
+    }
+    
+    return this.hasPlayerCharacter;
+  }
+  
+  /**
+   * 获取当前模式是否有玩家角色
+   * @returns {boolean}
+   */
+  getPlayerMode() {
+    return this.hasPlayerCharacter;
+  }
+  
+  /**
+   * 更新角色信息
+   * @param {string} id - 角色ID
+   * @param {Object} data - 更新的数据
+   * @returns {AgentProfile|undefined} 更新后的角色
+   */
+  update(id, data) {
+    if (!id || !this.agents.has(id)) {
+      console.error(`更新失败: 角色ID ${id} 不存在`);
+      return undefined;
+    }
+    
+    try {
+      // 确保skills是一个数组
+      if (data.skills && !Array.isArray(data.skills)) {
+        data.skills = [];
+      }
+      
+      // 确保relationships是一个数组
+      if (data.relationships && !Array.isArray(data.relationships)) {
+        data.relationships = [];
+      }
+      
+      const updatedAgent = {
+        ...this.agents.get(id),
+        ...data,
+        id // 确保ID不变
+      };
+      
+      this.agents.set(id, updatedAgent);
+      return updatedAgent;
+    } catch (error) {
+      console.error(`更新角色失败:`, error);
+      return undefined;
+    }
   }
 
   /**
@@ -219,4 +407,4 @@ class AgentRegistry {
 const agentRegistry = new AgentRegistry();
 
 export default agentRegistry;
-export { createAgent };
+

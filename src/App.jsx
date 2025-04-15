@@ -1,10 +1,10 @@
 import React from 'react';
-import Game from '@/components/Game';
+import MainLayout from './components/MainLayout';
 
 export default function App() {
   return (
     <div className="app-container">
-      <Game />
+      <MainLayout />
     </div>
   );
 }

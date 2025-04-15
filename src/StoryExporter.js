@@ -1,6 +1,7 @@
 import { saveAs } from 'file-saver';
 import gameHistory from './history';
 import agentRegistry from './agent_registry';
+import gameState from './game_state';
 import novelGenerator from './novel_generator';
 
 /**
@@ -64,10 +65,10 @@ class StoryExporter {
         generatedAt: new Date().toISOString(),
         version: '1.0'
       },
-      world: gameState.worldSettings,
-      characters: agentRegistry.getAll(),
-      timeline: gameHistory.getKeyEvents(),
-      fullHistory: gameHistory.getAll()
+      world: gameState ? gameState.worldSettings : {},
+      characters: agentRegistry ? agentRegistry.getAll() : [],
+      timeline: gameHistory && gameHistory.getKeyEvents ? gameHistory.getKeyEvents() : [],
+      fullHistory: gameHistory && gameHistory.getAll ? gameHistory.getAll() : []
     }, null, 2);
   }
 

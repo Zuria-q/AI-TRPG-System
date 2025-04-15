@@ -94,13 +94,7 @@ export default function CharacterEditor({ agentId }) {
         if (typeof agentRegistry.getAll === 'function') {
           agentRegistry.getAll().forEach(otherAgent => {
             if (otherAgent.id !== agentId) {
-              try {
-                // 使用正确的方法名 getTrust 而不是 getTrustLevel
-                rels[otherAgent.id] = trustMap.getTrust(agentId, otherAgent.id);
-              } catch (error) {
-                console.warn(`获取信任度失败: ${agentId} -> ${otherAgent.id}`, error);
-                rels[otherAgent.id] = 50; // 默认中性值
-              }
+              rels[otherAgent.id] = trustMap.getTrustLevel(agentId, otherAgent.id);
             }
           });
         }
@@ -136,19 +130,9 @@ export default function CharacterEditor({ agentId }) {
   // 保存角色数据
   const saveAgent = () => {
     if (agent) {
-      try {
-        // 检查角色是否已存在，如果存在则使用update方法，否则使用register方法
-        if (agentRegistry.get(agent.id)) {
-          agentRegistry.update(agent.id, agent);
-        } else {
-          agentRegistry.register(agent);
-        }
-        setIsEditing(false);
-        message.success('角色数据已保存');
-      } catch (error) {
-        console.error('保存角色数据失败:', error);
-        message.error(`保存失败: ${error.message}`);
-      }
+      agentRegistry.register(agent);
+      setIsEditing(false);
+      message.success('角色数据已保存');
     }
   };
   

@@ -1,9 +1,12 @@
-import gameState from './game_state';
-import agentRegistry from './agent_registry';
-import agentPolicy from './agent_policy';
-import trustMap from './trust_map';
-import promptBuilder from './promptBuilder';
-import llmIntegration from './llm_integration';
+import { 
+  gameState,
+  agentRegistry,
+  agentPolicy,
+  trustMap,
+  promptBuilder,
+  llmIntegration,
+  memoryStore
+} from '@/modules/index';
 
 /**
  * 游戏主控系统
@@ -39,17 +42,32 @@ class GameController {
    * @param {Object} config - 游戏配置
    */
   initialize(config) {
-    // 初始化游戏状态
-    gameState.initializeState(config);
+    try {
+      // 初始化游戏状态
+      gameState.initializeState(config);
+      
+      // 初始化记忆系统
+      if (memoryStore) {
+        memoryStore.updateConfig(config.memoryConfig || {});
+      }
+      
+      // 初始化角色
+      if (config.agents && Array.isArray(config.agents)) {
+        config.agents.forEach(agentConfig => {
+          const agent = agentRegistry.createAgent(agentConfig);
+          agentRegistry.register(agent);
+        });
+      }
     
-    // 初始化角色
-    config.agents.forEach(agentConfig => {
-      const agent = agentRegistry.createAgent(agentConfig);
-      agentRegistry.register(agent);
-    });
-    
-    // 初始化信任矩阵
-    trustMap.initialize(Array.from(agentRegistry.getAll().map(a => a.id)));
+      // 初始化信任矩阵
+      const agentIds = Object.keys(agentRegistry.getAllAgents());
+      trustMap.initialize(agentIds);
+      
+      return true;
+    } catch (error) {
+      console.error('游戏初始化失败:', error, '配置:', config);
+      return false;
+    }
     
     this.playerId = config.playerId;
     this.currentTurn = 0;
